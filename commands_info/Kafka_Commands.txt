@@ -1,0 +1,105 @@
+----------------------------------------------------------------------------------------------------------------------------------
+# User specific environment and startup programs
+export KAFKA_HOME=/opt/apache/kafka_2.13-2.6.0/
+export JAVA_HOME=/u2/java/jdk1.8.0_181
+export JRE_HOME=/u2/java/jdk1.8.0_181/jre
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$OGG_HOME:/u2/java/jdk1.8.0_181/jre/lib/amd64/server
+#export OGG_HOME=/opt/oracle/product/goldengate19c/db12c
+#export CLASSPATH=.:/opt/apache/kafka_2.13-2.6.0/libs/kafka-clients-2.6.0.jar:/opt/apache/kafka_2.13-2.6.0/libs/slf4j-api-1.7.30.jar
+export CLASSPATH=$CLASSPATH:/opt/apache/kafka_2.13-2.6.0/libs/*
+export PATH=$KAFKA_HOME/bin:$JAVA_HOME/bin:$JRE_HOME/bin:$KAFKA_HOME:$PATH
+export OGG_HOME=
+----------------------------------------------------------------------------------------------------------------------------------
+Starting Kafka
+
+1. Start Zookeeper
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./zookeeper-server-start.sh ../config/zookeeper.properties
+
+2. Verify if Zookeeper has started
+
+jps
+9604 QuorumPeerMain <= This is zookeeper daemon
+9965 Jps
+
+netstat -nlpt
+
+2. Start Kafka
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./kafka-server-start.sh ../config/server.properties
+----------------------------------------------------------------------------------------------------------------------------------
+
+Create Kafka Topic
+
+cd /opt/apache/kafka_2.13-2.6.0/
+./bin/kafka-topics.sh 
+    --create \
+    --zookeeper <hostname>:<port> \
+    --topic <topic-name> \
+    --partitions <number-of-partitions> \
+    --replication-factor <number-of-replicating-servers>
+
+./bin/kafka-topics.sh 
+    --create \
+    --zookeeper localhost:2181 \
+    --replication-factor 1 \
+    --partitions 1 \
+    --topic topic1
+
+Output
+[oracle@orcl bin]$ ./kafka-topics.sh  --create  --zookeeper localhost:2181  --replication-factor 1  --partitions 1 --topic topic1
+Created topic topic1.
+----------------------------------------------------------------------------------------------------------------------------------
+List topics in the Broker
+cd /opt/apache/kafka_2.13-2.6.0/bin
+ ./kafka-topics.sh --list --zookeeper localhost:2181
+topic1
+
+----------------------------------------------------------------------------------------------------------------------------------
+Delete Topic
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./kafka-topics.sh –-delete --zookeeper localhost:2181 -–topic <topic-name>
+
+Delete all records within a topic :
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./kafka-configs.sh --bootstrap-server localhost:9092 --entity-type topics --entity-name topic1 --alter --add-config delete.retention.ms=11
+----------------------------------------------------------------------------------------------------------------------------------
+Modify Topic configuration
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./kafka-configs.sh --entity-type topics --entity-name <topic name> --alter --bootstrap-server localhost:9092 --add-config cleanup.policy=[compact]
+
+----------------------------------------------------------------------------------------------------------------------------------
+Describe topic
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./kafka-topics.sh --zookeeper localhost:2181 --describe --topic topic1
+----------------------------------------------------------------------------------------------------------------------------------
+Executing Producer
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./kafka-console-producer.sh --topic topic1 --bootstrap-server localhost:9092
+>
+
+----------------------------------------------------------------------------------------------------------------------------------
+Executing Consumer
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./kafka-console-consumer.sh --topic topic1 -from-beginning --bootstrap-server localhost:9092
+./kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --property print.key=true --max-messages 20 --topic topic1
+./kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --property print.key=false --max-messages 20 --topic topic1
+----------------------------------------------------------------------------------------------------------------------------------
+KafkaProducer.flush () will send all buffered events to Kafka even if LINGER.MS is set to 0
+----------------------------------------------------------------------------------------------------------------------------------
+Close Kafka Producer
+file:///E:/Prajeeth/Kafka/GGProducer.java
+    /**
+     * Close the Kafka producer.
+     */
+    public void close(){
+        logger.info("Closing the Kafka connection.");
+        if (kafkaProducer != null){
+            //The close connection cannot block indefinately.  Allowing 10 seconds.
+            kafkaProducer.close(10, TimeUnit.SECONDS);
+            kafkaProducer = null;
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------
+
+

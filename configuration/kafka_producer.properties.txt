@@ -1,0 +1,16 @@
+# TO BE PLACED IN dirprm DIRECTORY
+bootstrap.servers=localhost:9092
+acks=1
+reconnect.backoff.ms=1000
+
+value.serializer=org.apache.kafka.common.serialization.ByteArraySerializer
+key.serializer=org.apache.kafka.common.serialization.ByteArraySerializer
+
+value.converter=org.apache.kafka.connect.json.JsonConverter
+key.converter=org.apache.kafka.connect.json.JsonConverter
+internal.value.converter=org.apache.kafka.connect.json.JsonConverter
+internal.key.converter=org.apache.kafka.connect.json.JsonConverter
+
+# 100KB per partition
+batch.size=16384
+linger.ms=0

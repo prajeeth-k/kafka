@@ -1,0 +1,176 @@
+STEP 1
+Start DB
+. oraenv
+containerdb
+
+sqlplus /nolog
+conn / as sysdba
+startup
+
+tail -f /opt/oracle/diag/rdbms/containerdb/containerdb/trace/alert_containerdb.log
+
+select con_id, dbid, name, open_mode, restricted from v$pdbs order by name;
+
+    CON_ID       DBID NAME                           OPEN_MODE  RES
+---------- ---------- ------------------------------ ---------- ---
+         2 2638188170 PDB$SEED                       READ ONLY  NO
+         3 2949448650 PDB1                           MOUNTED
+         5 1175362469 PDB2                           MOUNTED
+         4 3716185434 PDB_OID                        MOUNTED
+
+alter pluggable database pdb1 open read write;
+alter pluggable database pdb2 open read write;
+
+select con_id, dbid, name, open_mode, restricted from v$pdbs order by name;
+
+    CON_ID       DBID NAME                           OPEN_MODE  RES
+---------- ---------- ------------------------------ ---------- ---
+         2 2638188170 PDB$SEED                       READ ONLY  NO
+         3 2949448650 PDB1                           READ WRITE NO
+         5 1175362469 PDB2                           READ WRITE NO
+         4 3716185434 PDB_OID                        MOUNTED
+
+SQL> sho user
+USER is "SYS"
+
+SQL> sho con_name
+
+CON_NAME
+------------------------------
+CDB$ROOT
+
+
+exit
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+STEP 2
+Start listener
+lsnrctl start listener_pdbs
+
+lsnrctl service
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+STEP 3
+Start GoldenGate Core for Database (the below env setting are saved in /home/oracle/start_gg_core.sh on orcl, but need to start GG processes E12 & P12)
+
+ORACLE_HOME=/opt/oracle/product/12.1.0/db_2/
+export ORACLE_HOME
+
+OGG_HOME=/opt/oracle/product/goldengate19c/db12c
+export OGG_HOME
+
+PATH=$ORACLE_HOME/bin:$OGG_HOME:$PATH:/home/oracle/bin
+export PATH
+
+TNS_ADMIN=$ORACLE_HOME/network/admin
+export TNS_ADMIN
+
+LD_LIBRARY_PATH=$ORACLE_HOME/lib:$OGG_HOME
+export LD_LIBRARY_PATH
+
+cd $OGG_HOME
+./ggsci
+start mgr
+start extract e12
+start extract p12
+
+cd $OGG_HOME
+./ggsci
+MANAGER     RUNNING
+EXTRACT     RUNNING     E12         00:00:09      00:00:01
+EXTRACT     RUNNING     P12         00:00:00      00:00:06
+
+Start only above 2 processes. Only these 2 are needed for Kafka replication
+
+To get details information for a process
+ info e12, detail
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+STEP 4
+Start Kafka (The below env setting are in /home/oracle/start_kafka.sh in orcl)
+
+# User specific environment and startup programs
+export KAFKA_HOME=/opt/apache/kafka_2.13-2.6.0/
+export JAVA_HOME=/u2/java/jdk1.8.0_181
+export JRE_HOME=/u2/java/jdk1.8.0_181/jre
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$OGG_HOME:/u2/java/jdk1.8.0_181/jre/lib/amd64/server
+export CLASSPATH=.:/opt/apache/kafka_2.13-2.6.0/libs/kafka-clients-2.6.0.jar:/opt/apache/kafka_2.13-2.6.0/libs/slf4j-api-1.7.30.jar
+export CLASSPATH=$CLASSPATH:/opt/apache/kafka_2.13-2.6.0/libs/*
+export PATH=$KAFKA_HOME/bin:$JAVA_HOME/bin:$JRE_HOME/bin:$KAFKA_HOME:$PATH
+#export OGG_HOME=/opt/oracle/product/goldengate19c/ggbigdata/
+export OGG_HOME=
+
+1. Start Zookeeper
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./zookeeper-server-start.sh ../config/zookeeper.properties &
+
+2. Verify if Zookeeper has started
+
+jps
+9604 QuorumPeerMain <= This is zookeeper daemon
+9965 Jps
+
+netstat -nlpt
+
+2. Start 3 Kafka brokers
+cd /opt/apache/kafka_2.13-2.6.0/bin
+./kafka-server-start.sh ../config/broker_1.properties &
+
+./kafka-server-start.sh ../config/broker_2.properties &
+
+./kafka-server-start.sh ../config/broker_3.properties &
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+STEP 5
+
+Start OGG for BigData (Below settings are stored in /home/oracle/start_gg_bigdata.sh)
+export KAFKA_HOME=/opt/apache/kafka_2.13-2.6.0/
+export JAVA_HOME=/u2/java/jdk1.8.0_181
+export JRE_HOME=/u2/java/jdk1.8.0_181/jre
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$OGG_HOME:/u2/java/jdk1.8.0_181/jre/lib/amd64/server
+export CLASSPATH=.:/opt/apache/kafka_2.13-2.6.0/libs/kafka-clients-2.6.0.jar:/opt/apache/kafka_2.13-2.6.0/libs/slf4j-api-1.7.30.jar
+export CLASSPATH=$CLASSPATH:/opt/apache/kafka_2.13-2.6.0/libs/*
+export PATH=$KAFKA_HOME/bin:$JAVA_HOME/bin:$JRE_HOME/bin:$KAFKA_HOME:$PATH
+#export OGG_HOME=/opt/oracle/product/goldengate19c/ggbigdata/
+export OGG_HOME=
+
+cd /opt/oracle/product/goldengate19c/ggbigdata
+./ggsci
+> start mgr
+> start rkafka
+
+./ggsci
+> info all
+MANAGER     RUNNING
+REPLICAT    RUNNING     RKAFKA      00:00:00      00:00:02
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Run the Java file
+cd /home/oracle/Desktop
+export CLASSPATH=.:/opt/apache/kafka_2.13-2.6.0/libs/kafka-clients-2.6.0.jar:/opt/apache/kafka_2.13-2.6.0/libs/slf4j-api-1.7.30.jar
+export CLASSPATH=$CLASSPATH:/opt/apache/kafka_2.13-2.6.0/libs/*
+export CLASSPATH=$CLASSPATH:/home/oracle/Desktop
+
+export CLASSPATH="$CLASSPATH:/home/oracle/Desktop/sqlserverjdbc.jar:/home/oracle/Desktop/sqljdbc4.jar:/home/oracle/Desktop/ojdbc7.jar:."
+#export CLASSPATH="/home/oracle/Desktop/sqljdbc4.jar:/home/oracle/Desktop/ojdbc7.jar:."
+
+Host : 192.168.1.75
+User : oracle
+cd /home/oracle/Desktop
+javac -Xlint ExtractKafkaTopic3.java
+java ExtractKafkaTopic3
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+. oraenv
+containerdb
+
+sqlplus /nolog
+
+conn prajeeth/prajeeth@pdb1
+select * from emp9 order by empno;
+select * from ivrtst order by empno;
+insert into emp9 values (1016, 'Emp16', sysdate);
+commit;
+
+

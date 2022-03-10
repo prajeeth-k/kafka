@@ -1,0 +1,56 @@
+# TO BE PLACED IN dirprm DIRECTORY
+
+gg.handlerlist = kafkahandler
+
+#The handler properties
+gg.handler.kafkahandler.type = kafka
+gg.handler.kafkahandler.KafkaProducerConfigFile = kafka_producer.properties
+#gg.handler.kafkahandler.mode = op
+gg.handler.kafkahandler.mode = tx
+#gg.handler.kafkahandler.sourceRecordGeneratorClass = oracle.goldengate.kafkaconnect.DefaultSourceRecordGenerator
+# gg.handler.kafkahandler.TopicName=topic1 <= This is wrong parameter for handler. This is correct gg.handler.kafkahandler.topicMappingTemplate = topic1
+gg.handler.kafkahandler.SchemaTopicName = mySchemaTopic
+
+#The following resolves the topic name using the short table name
+#gg.handler.kafkahandler.topicMappingTemplate = ${tableName}
+gg.handler.kafkahandler.topicMappingTemplate = topic1
+
+#The following selects the message key using the concatenated primary keys
+gg.handler.kafkahandler.keyMappingTemplate = ${primaryKeys}
+#gg.handler.kafkahandler.keyMappingTemplate = ${currentTimestamp}
+
+#The formatter properties
+#gg.handler.kafkahandler.format = avro_op <=  I commented this to use json as below
+#gg.handler.kafkahandler.format = json
+gg.handler.kafkahandler.format = delimitedtext
+gg.handler.kafkahandler.format.fieldDelimiter=|
+#gg.handler.kafkahandler.format = oracle.goldengate.kafkaconnect.formatter.KafkaConnectFormatter
+#gg.handler.kafkahandler.format.insertOpKey = I
+#gg.handler.kafkahandler.format.updateOpKey = U
+#gg.handler.kafkahandler.format.deleteOpKey = D
+#gg.handler.kafkahandler.format.treatAllColumnsAsStrings = false
+#gg.handler.kafkahandler.format.iso8601Format = false
+#gg.handler.kafkahandler.format.pkUpdateHandling = abend
+
+gg.handler.kafkahandler.BlockingSend  = false
+#gg.handler.kafkahandler.includeTokens = false
+
+#gg.handler.kafkahandler.metaHeadersTemplate = ${alltokens}
+gg.handler.kafkahandler.transactionsEnabled = false
+
+goldengate.userexit.timestamp = utc
+goldengate.userexit.writers = javawriter
+javawriter.stats.display = TRUE
+javawriter.stats.full = TRUE
+auto.create.topics.enable=true
+
+gg.log = log4j
+gg.log.level = DEBUG
+
+gg.report.time = 30sec
+
+#Set gg.classpath for Apache Kafka
+#gg.classpath = dirprm/:/opt/oracle/product/goldengate19c/ggbigdata/ggjava/resources/lib*
+gg.classpath = dirprm/:/opt/oracle/product/goldengate19c/ggbigdata/ggjava/resources/lib*:/opt/apache/kafka_2.13-2.6.0/libs
+
+javawriter.bootoptions = -Xmx512m -Xms32m -Djava.class.path = /opt/oracle/product/goldengate19c/ggbigdata/ggjava/ggjava.jar

@@ -1,0 +1,60 @@
+package ora.metadata.table;
+
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.lang.StringBuffer;
+import java.lang.Exception;
+
+//import java.util.regex.PatternSyntaxExpression;
+
+public class EmployeeMetadata {
+   String strInput;
+   String sqlStr;
+   public EmployeeMetadata () {
+   }
+   public EmployeeMetadata (String data) {
+      this.strInput = data;
+   }
+   public void setInput (String input) {
+      this.strInput = input;
+      this.generateSQL ();
+   }
+   private void generateSQL () {
+      String inputStr1 = strInput.replaceAll ("\":", "|");
+      String inputStr2 = inputStr1.replaceAll ("\"", "");
+      String str2;
+      String str3;
+      int i;
+      i = 1;
+      String REGEX = "after\\|";
+      Pattern pattern = Pattern.compile (REGEX);
+      String[] rawData = pattern.split (inputStr2);
+      String x = rawData[1].replaceAll ("\\{", "");
+      String x2 = x.replaceAll ("\\}", "");
+      String[] data = x2.split (",");
+      String field;
+      StringBuffer sb = new StringBuffer ();
+      sb.append ("INSERT INTO emp9 VALUES (");
+
+      for (i = 0; i < data.length; i++) {
+         field = data[i].split ("\\|")[1];
+         switch (i) {
+         case 0 :
+            sb.append (field + ", ");
+            break;
+         case 1 :
+            sb.append ("'" + field + "', ");
+            break;
+         case 2 :
+            sb.append ("'" + field + "', ");
+            break;
+         }
+      }
+
+      String insertStmt = sb.substring (0, sb.length () - 2) + ");";
+      this.sqlStr = insertStmt;
+  }
+  public void loadData () {
+     System.out.println ("EmployeeMetadata.loadData () " + sqlStr);
+  }
+}

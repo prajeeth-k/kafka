@@ -1,0 +1,106 @@
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serdes;
+
+import java.util.Collection;
+import java.lang.String;
+import java.util.ConcurrentModificationException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.Map;
+import java.util.HashMap;
+
+import ora.metadata.table.EmployeeMetadata;
+
+@SuppressWarnings("unchecked")
+class KeyDeserializer12 implements Deserializer<String> {
+   Map<String, String> deserial;
+   KeyDeserializer12 () {
+      deserial = new HashMap<String, String>();
+      deserial.put ("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+   }
+   //void configure (Map<String,String> deserial, boolean isKeytrue) {}
+   @Override public void configure(Map<String, ?> arg0, boolean arg1) {}
+   @Override
+   public String deserialize (String topic, byte[] data) {
+        String x = new String (data);
+        return x;
+   }
+   @Override public void close () {}
+}
+
+@SuppressWarnings("unchecked")
+class ValueDeserializer12 implements Deserializer<String> {
+   Map<String, String> deserial;
+   ValueDeserializer12 () {
+      deserial = new HashMap<String, String>();
+      deserial.put ("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+   }
+   // void configure (Map<String,String> deserial, boolean isKeytrue) {}
+   @Override public void configure(Map<String, ?> arg0, boolean arg1) {}
+   @Override
+   public String deserialize (String topic, byte[] data) {
+        String x = new String (data);
+        return x;
+   }
+   @Override public void close () {}
+}
+
+@SuppressWarnings("unchecked")
+public class ExtractKafkaTopic3 {
+
+   Properties props;
+   KeyDeserializer12 k;
+   ValueDeserializer12 v;
+   public void printRows () {
+        k = new KeyDeserializer12 ();
+        v = new ValueDeserializer12 ();
+        //public void subscribe (Arrays.asList ("topic1"), ConsumerRebalanceListener listener) {}
+   }
+   public void kafkaConsumer () {
+      final AtomicBoolean closed = new AtomicBoolean(false);
+      props = new Properties();
+      props.setProperty ("bootstrap.servers", "localhost:9092");
+      props.setProperty("group.id", "test");
+      props.setProperty("enable.auto.commit", "false");
+      props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+      props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+      String pVal = props.getProperty ("key.deserializer");
+      KafkaConsumer<String, String> consumer = new KafkaConsumer<> (props);
+      consumer.subscribe (Arrays.asList ("topic1"));
+      final int minBatchSize = 200;
+      List<ConsumerRecord<String, String>> buffer = new ArrayList<>();
+      System.out.println ("Oracle Database, Apache Kafka, ECCOS SQL Server Database Replication");
+      while (!closed.get()) {
+         ConsumerRecords<String, String> records = consumer.poll (Duration.ofMillis (100));
+         for (ConsumerRecord<String, String> record : records) {
+            buffer.add(record);
+            // System.out.println ("Topic : " + record.topic () + " | Key : " + record.key () + " | Value : " + record.value ());
+            //System.out.println ("Record.Value : " + record.value ());
+            EmployeeMetadata m = new EmployeeMetadata ();
+            m.setInput (record.value ());
+           m.loadData ();
+         }
+      }
+      if (buffer.size () >= minBatchSize) {
+         //insertIntoDb(buffer);
+         consumer.commitSync();
+         buffer.clear();
+      }
+   }
+
+   public static void main (String[] a) {
+      ExtractKafkaTopic3 extractKafkaTopic = new ExtractKafkaTopic3 ();
+      extractKafkaTopic.kafkaConsumer ();
+   }
+}

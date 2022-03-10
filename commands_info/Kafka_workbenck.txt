@@ -1,0 +1,74 @@
+import java.sql.Timestamp;
+
+EmployeeMetadata.java => EmployeeDeserializer.java
+
+   DB.load (Object x) {
+      EmployeeDeserializer empData = (EmployeeDeserializer) x;
+      try {
+         PreparedStatement stmt = conn.prepareStatement ();
+         String insertQuery =  "INSERT INTO ivrtst (empno, ename, start_date)";
+                               + " VALUES (?, ?)";
+         conn.prepareStatement (insertQuery);
+         stmt.setInt (1, empData.getEmpno ());
+         stmt.setString (2, empData.getEmpName ());
+         stmt.setTimestamp (3, empData.getJoinDate ());
+         stmt.execute ();
+      } catch (Exception e) {
+          e.printStackTrace ();
+      } finally {
+         stmt.close ();
+      }
+   }
+
+String pattern = "MMM dd, yyyy HH:mm:ss.SSSSSSSS";
+String timestampAsString = "Nov 12, 2018 13:02:56.12345678";
+
+String pattern = "yyyy-MM-dd HH:mm:ss.SSSSSSSS";
+2020-11-09 11:13:26.000812
+
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
+;
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern (pattern);
+LocalDateTime localDateTime = LocalDateTime.from (formatter.parse (timestampAsString));
+
+Timestamp timestamp = Timestamp.valueOf (localDateTime);
+
+DB dbObject;
+      dbObject = new DB ();
+      dbObject.setUser ("prajeeth2");
+      dbObject.setPassword ("prajeeth2");
+      dbObject.getConnection ();
+
+
+
+                sb.append ("to_date ('" + fieldValue + "', 'yyyy-mm-dd hh24:mi:ss')");
+                String pattern = "yyyy-MM-dd HH:mm:ss.SSSSSSSS";
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern (pattern);
+                LocalDateTime localDateTime = LocalDateTime.from (formatter.parse (fieldValue));
+                this.joinDate = Timestamp.valueOf (localDateTime);
+                //this.joinDate = fieldValue;
+                break;
+
+
+
+                sb.append ("'" + fieldValue + "', ");
+                this.empName = fieldValue;
+
+
+
+
+ora/util/DB.java
+ora/metadata/table/EmployeeMetadata.java
+ora/metadata/table/EmployeeDeserializer.java
+
+ExtractKafkaTopic3.java
+
+select * from emp9 order by empno;
+select * from ivrtst order by empno;
+
+insert into emp9 values (1119, 'Emp119', sysdate);
+
+INSERT INTO ivrtst (empno, ename, start_date) VALUES (1118, 'Emp118', to_date ('2020-11-28 13:14:51', 'yyyy-mm-dd hh24:mi:ss'))
+
+

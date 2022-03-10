@@ -1,0 +1,45 @@
+# TO BE PLACED IN dirprm DIRECTORY
+
+cd /opt/oracle/product/goldengate19c/ggbigdata/
+./ggsci
+
+create subdirs
+
+GGSCI (orcl) 2> 
+REPLICAT added.
+
+------------------------------------------------------------------------------------------------------------------------
+REPLICAT rkafk
+TARGETDB LIBFILE libggjava.so SET property=dirprm/kafka_replicat.properties
+REPORTCOUNT EVERY 1 MINUTES, RATE
+GROUPTRANSOPS 1000
+SOURCEDEFS /opt/oracle/product/goldengate19c/db12c/dirsql/praj_emp9_def.sql
+MAP pdb1.prajeeth.emp9, TARGET topic1.emp9;
+
+
+~~ obey.obey
+dblogin userid c##ggadmin@containerdb PASSWORD ggadmin
+
+GGSCI (orcl as c##ggadmin@containerdb/CDB$ROOT) 6> ADD CHECKPOINTTABLE c##ggadmin.checkpoint
+ERROR: Catalog name is missing from checkpoint table specification c##ggadmin.checkpoint.
+
+CORRECTED BELOW
+ADD CHECKPOINTTABLE pdb1.c##ggadmin.checkpoint
+Successfully created checkpoint table pdb1.c##ggadmin.checkpoint.
+
+
+ADD REPLICAT rkafk, EXTTRAIL ./dirdat/target/pdb1/ot
+ERROR: No checkpoint table specified for ADD REPLICAT.
+
+ADD REPLICAT rkafka, EXTTRAIL /opt/oracle/product/goldengate19c/db12c/dirdat/target/pdb1/ot
+REPLICAT added.
+
+dblogin userid c##ggadmin@containerdb PASSWORD ggadmin
+DELETE REPLICAT RKAFKA
+DELETE CHECKPOINTTABLE pdb1.c##ggadmin.checkpoint
+This checkpoint table may be required for other installations.  Are you sure you want to delete this checkpoint table? no
+
+
+ggsci> START rkafk
+
+

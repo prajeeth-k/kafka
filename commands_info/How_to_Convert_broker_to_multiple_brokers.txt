@@ -1,0 +1,35 @@
+cd $KAFKA_HOME/config
+
+
+if $KAFKA_HOME/config/server.properties is being used by first broker (ie, broker.id = 0), then do the following :
+cp server.properties server_2.properties <== To be used by 2nd broker
+cp server.properties server_3.properties <== To be used by 3rd broker
+
+vi server_2.properties
+STEP-1
+Modify
+    broker.id=0
+to
+    broker.id=1
+
+STEP-2
+Modify 
+    listeners=PLAINTEXT://:9092
+to
+    listeners=PLAINTEXT://:9092
+
+STEP-3
+Modify
+    log.dirs=/u2/kafka/logs
+to
+    log.dirs=/u2/kafka/logs_2 <=== Ensure that /u2/kafka/logs_2 is already created and has write permission
+
+Do STEP-1 to STEP-3 for the new brokers
+
+Start the new brokers as below
+cd /opt/apache/kafka_2.13-2.6.0/bin
+
+./kafka-server-start.sh ../config/server_2.properties &
+
+./kafka-server-start.sh ../config/server_3.properties &
+
